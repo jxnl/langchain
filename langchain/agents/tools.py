@@ -1,7 +1,7 @@
 """Interface for tools."""
-import functools
 from dataclasses import dataclass
-from inspect import getfullargspec, signature
+from inspect import signature
+from textwrap import dedent
 from typing import Callable, Optional, Union
 
 
@@ -46,7 +46,7 @@ def tool(
             assert func.__doc__, "Function must have a docstring"
             # Description example:
             #   search_api(query: str) - Searches the API for the query.
-            description = f"{tool_name}{signature(func)} - {func.__doc__.strip()}"
+            description = f"{tool_name}{signature(func)} - {dedent(func.__doc__.strip())}"
             tool = Tool(
                 name=tool_name,
                 func=func,
