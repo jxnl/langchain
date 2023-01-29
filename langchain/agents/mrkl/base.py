@@ -88,7 +88,8 @@ class ZeroShotAgent(Agent):
         """
         tool_strings = "\n".join([f"{tool.name}: {tool.description}" for tool in tools])
         tool_names = ", ".join([tool.name for tool in tools])
-        format_instructions = FORMAT_INSTRUCTIONS.format(tool_names=tool_names)
+
+        format_instructions = FORMAT_INSTRUCTIONS.format(tool_strings=tool_strings, tool_names=tool_names)
         template = "\n\n".join([prefix, tool_strings, format_instructions, suffix])
         if input_variables is None:
             input_variables = ["input", "agent_scratchpad"]
@@ -117,6 +118,34 @@ class ZeroShotAgent(Agent):
         )
         tool_names = [tool.name for tool in tools]
         return cls(llm_chain=llm_chain, allowed_tools=tool_names, **kwargs)
+    
+    def reset_chain_prefix(self, prefix: str, tools=List[Tool]) -> None:
+        """
+        Builds a new chain with the same LLM and callback manager, but with a new prompt prefix.
+        Useful for changing the prompt prefix and giving an agent a new task with access to tools 
+        
+        Args:
+            prefix: The new prefix to use. This will be prepended to the prompt.
+            tools: The list of tools to use to create the prompt.
+        
+        Returns:
+            None
+        """
+        
+        prev_chain = self.llm_chain
+        prev_prompt = self.llm_chain.prompt
+
+        # Build a new chain with the same LLM and callback manager
+        # but with a new prompt using the new prefix
+        self.llm_chain= LLMChain(
+            llm=prev_chain.llm,
+            callback_manager=prev_chain.callback_manager,
+            prompt=self.create_prompt(
+                tools=tools,
+                prefix=prefix,
+                input_variables=prev_prompt.input_variables,
+            )
+        )
 
     @classmethod
     def _validate_tools(cls, tools: List[Tool]) -> None:
