@@ -1,5 +1,6 @@
 # flake8: noqa
 PREFIX = """Answer the following questions as best you can."""
+INPUT_TYPE = "Question"
 FORMAT_INSTRUCTIONS = """
 You have access to the following tools:
 
@@ -7,7 +8,7 @@ You have access to the following tools:
 
 Use the following format:
 
-Question: the input question you must answer
+{input_type}: the input question you must answer
 Thought: you should always think about what to do
 Action: the action to take, should be one of [{tool_names}]
 Action Input: the input to the action

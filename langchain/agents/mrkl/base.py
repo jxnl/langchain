@@ -5,7 +5,7 @@ import re
 from typing import Any, Callable, List, NamedTuple, Optional, Tuple
 
 from langchain.agents.agent import Agent, AgentExecutor
-from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
+from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX, INPUT_TYPE
 from langchain.agents.tools import Tool
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.chains import LLMChain
@@ -72,6 +72,7 @@ class ZeroShotAgent(Agent):
         tools: List[Tool],
         prefix: str = PREFIX,
         suffix: str = SUFFIX,
+        input_type: str = INPUT_TYPE, 
         input_variables: Optional[List[str]] = None,
     ) -> PromptTemplate:
         """Create prompt in the style of the zero shot agent.
@@ -89,7 +90,7 @@ class ZeroShotAgent(Agent):
         tool_strings = "\n".join([f"{tool.name}: {tool.description}" for tool in tools])
         tool_names = ", ".join([tool.name for tool in tools])
 
-        format_instructions = FORMAT_INSTRUCTIONS.format(tool_strings=tool_strings, tool_names=tool_names)
+        format_instructions = FORMAT_INSTRUCTIONS.format(input_type=input_type, tool_strings=tool_strings, tool_names=tool_names)
         template = "\n\n".join([prefix, tool_strings, format_instructions, suffix])
         if input_variables is None:
             input_variables = ["input", "agent_scratchpad"]
@@ -103,13 +104,14 @@ class ZeroShotAgent(Agent):
         callback_manager: Optional[BaseCallbackManager] = None,
         prefix: str = PREFIX,
         suffix: str = SUFFIX,
+        input_type: str = INPUT_TYPE,
         input_variables: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> Agent:
         """Construct an agent from an LLM and tools."""
         cls._validate_tools(tools)
         prompt = cls.create_prompt(
-            tools, prefix=prefix, suffix=suffix, input_variables=input_variables
+            tools=tools, input_type=input_type, prefix=prefix, suffix=suffix, input_variables=input_variables
         )
         llm_chain = LLMChain(
             llm=llm,
@@ -119,13 +121,14 @@ class ZeroShotAgent(Agent):
         tool_names = [tool.name for tool in tools]
         return cls(llm_chain=llm_chain, allowed_tools=tool_names, **kwargs)
     
-    def reset_chain_prefix(self, prefix: str, tools=List[Tool]) -> None:
+    def reset_chain_prefix(self, prefix: str, input_type:str=INPUT_TYPE, tools=List[Tool]) -> None:
         """
         Builds a new chain with the same LLM and callback manager, but with a new prompt prefix.
         Useful for changing the prompt prefix and giving an agent a new task with access to tools 
         
         Args:
             prefix: The new prefix to use. This will be prepended to the prompt.
+            input_type: The type of input the agent will be given. This will be the name of the input
             tools: The list of tools to use to create the prompt.
         
         Returns:
@@ -142,6 +145,7 @@ class ZeroShotAgent(Agent):
             callback_manager=prev_chain.callback_manager,
             prompt=self.create_prompt(
                 tools=tools,
+                input_type=input_type,
                 prefix=prefix,
                 input_variables=prev_prompt.input_variables,
             )
